@@ -8,6 +8,8 @@ export default function Home() {
   const [numbers, setNumbers] = useState<number[]>([]);
   const [alphabets, setAlphabets] = useState<string[]>([]);
   const [highestLowercaseAlphabet, setHighestLowercaseAlphabet] = useState<string>("");
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [filteredData, setFilteredData] = useState<string[]>([]);
   const [responseError, setResponseError] = useState<string | null>(null);
 
   function handleChange(event: React.ChangeEvent<HTMLInputElement>) {
@@ -46,19 +48,43 @@ export default function Home() {
 
     try {
       const response = await axios.post("/bhfl", JSON.parse(json));
-      // Update state with response data
-      setNumbers(response.data.numbers || []);
-      setAlphabets(response.data.alphabets || []);
-      setHighestLowercaseAlphabet(response.data.highest_lowercase_alphabet || "");
+      const { numbers, alphabets, highest_lowercase_alphabet } = response.data;
+      setNumbers(numbers || []);
+      setAlphabets(alphabets || []);
+      setHighestLowercaseAlphabet(highest_lowercase_alphabet || "");
       setResponseError(null);
+
+      // Initialize filtered data
+      filterData([...numbers.map(String), ...alphabets, highest_lowercase_alphabet]);
     } catch (error: any) {
       console.error('Error:', error.message);
       setResponseError('An error occurred while fetching the data.');
-      // Clear dropdowns on error
+      // Clear dropdowns and filtered data on error
       setNumbers([]);
       setAlphabets([]);
       setHighestLowercaseAlphabet("");
+      setFilteredData([]);
     }
+  }
+
+  function handleCategoryChange(event: React.ChangeEvent<HTMLSelectElement>) {
+    const selectedOptions = Array.from(event.target.selectedOptions, option => option.value);
+    setSelectedCategories(selectedOptions);
+    filterData(selectedOptions);
+  }
+
+  function filterData(selectedCategories: string[]) {
+    let dataToDisplay: string[] = [];
+    if (selectedCategories.includes("numbers")) {
+      dataToDisplay = dataToDisplay.concat(numbers.map(String));
+    }
+    if (selectedCategories.includes("alphabets")) {
+      dataToDisplay = dataToDisplay.concat(alphabets);
+    }
+    if (selectedCategories.includes("highest_lowercase_alphabet") && highestLowercaseAlphabet) {
+      dataToDisplay.push(highestLowercaseAlphabet);
+    }
+    setFilteredData(dataToDisplay);
   }
 
   return (
@@ -85,42 +111,30 @@ export default function Home() {
 
         {responseError && <p className="text-danger">{responseError}</p>}
 
-        {numbers.length > 0 && (
+        {numbers.length > 0 || alphabets.length > 0 || highestLowercaseAlphabet ? (
           <div>
-            <label htmlFor="numbers">Select a Number:</label>
-            <select id="numbers" className="form-control my-2">
-              {numbers.map((num, index) => (
-                <option key={index} value={num}>
-                  {num}
-                </option>
-              ))}
+            <label htmlFor="categories">Select Categories:</label>
+            <select
+              id="categories"
+              className="form-control my-2"
+              multiple
+              onChange={handleCategoryChange}
+            >
+              {numbers.length > 0 && <option value="numbers">Numbers</option>}
+              {alphabets.length > 0 && <option value="alphabets">Alphabets</option>}
+              {highestLowercaseAlphabet && <option value="highest_lowercase_alphabet">Highest Lowercase Alphabet</option>}
             </select>
-          </div>
-        )}
 
-        {alphabets.length > 0 && (
-          <div>
-            <label htmlFor="alphabets">Select an Alphabet:</label>
-            <select id="alphabets" className="form-control my-2">
-              {alphabets.map((alpha, index) => (
-                <option key={index} value={alpha}>
-                  {alpha}
-                </option>
-              ))}
-            </select>
+            <div>
+              <h4>Filtered Output:</h4>
+              <ul>
+                {filteredData.map((item, index) => (
+                  <li key={index}>{item}</li>
+                ))}
+              </ul>
+            </div>
           </div>
-        )}
-
-        {highestLowercaseAlphabet && (
-          <div>
-            <label htmlFor="highest_lowercase_alphabet">Highest Lowercase Alphabet:</label>
-            <select id="highest_lowercase_alphabet" className="form-control my-2" disabled>
-              <option value={highestLowercaseAlphabet}>
-                {highestLowercaseAlphabet}
-              </option>
-            </select>
-          </div>
-        )}
+        ) : null}
       </div>
     </div>
   );
