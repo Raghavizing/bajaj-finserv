@@ -1,13 +1,13 @@
-"use client";
-import axios from "axios";
-import React, { useEffect, useState } from "react";
+"use client"
+import axios from 'axios';
+import React, { useEffect, useState } from 'react';
 
 export default function Home() {
-  const [json, setJson] = useState("");
+  const [json, setJson] = useState('');
   const [disableBtn, setDisableBtn] = useState(true);
   const [numbers, setNumbers] = useState<number[]>([]);
   const [alphabets, setAlphabets] = useState<string[]>([]);
-  const [highestLowercaseAlphabet, setHighestLowercaseAlphabet] = useState<string>("");
+  const [highestLowercaseAlphabet, setHighestLowercaseAlphabet] = useState<string>('');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [filteredData, setFilteredData] = useState<string[]>([]);
   const [responseError, setResponseError] = useState<string | null>(null);
@@ -17,14 +17,14 @@ export default function Home() {
   }
 
   useEffect(() => {
-    setDisableBtn(json.trim() === "");
+    setDisableBtn(json.trim() === '');
   }, [json]);
 
   function isValidJson(jsonString: string): boolean {
     try {
       const parsed = JSON.parse(jsonString);
 
-      if (typeof parsed !== "object" || parsed === null || !("data" in parsed) || !Array.isArray(parsed.data)) {
+      if (typeof parsed !== 'object' || parsed === null || !('data' in parsed) || !Array.isArray(parsed.data)) {
         return false;
       }
 
@@ -47,11 +47,11 @@ export default function Home() {
     }
 
     try {
-      const response = await axios.post("/bhfl", JSON.parse(json));
+      const response = await axios.post('/bhfl', JSON.parse(json));
       const { numbers, alphabets, highest_lowercase_alphabet } = response.data;
       setNumbers(numbers || []);
       setAlphabets(alphabets || []);
-      setHighestLowercaseAlphabet(highest_lowercase_alphabet || "");
+      setHighestLowercaseAlphabet(highest_lowercase_alphabet || '');
       setResponseError(null);
 
       // Initialize filtered data
@@ -62,26 +62,29 @@ export default function Home() {
       // Clear dropdowns and filtered data on error
       setNumbers([]);
       setAlphabets([]);
-      setHighestLowercaseAlphabet("");
+      setHighestLowercaseAlphabet('');
       setFilteredData([]);
     }
   }
 
-  function handleCategoryChange(event: React.ChangeEvent<HTMLSelectElement>) {
-    const selectedOptions = Array.from(event.target.selectedOptions, option => option.value);
-    setSelectedCategories(selectedOptions);
-    filterData(selectedOptions);
+  function handleCategoryClick(category: string) {
+    const updatedSelectedCategories = selectedCategories.includes(category)
+      ? selectedCategories.filter(cat => cat !== category)
+      : [...selectedCategories, category];
+    
+    setSelectedCategories(updatedSelectedCategories);
+    filterData(updatedSelectedCategories);
   }
 
   function filterData(selectedCategories: string[]) {
     let dataToDisplay: string[] = [];
-    if (selectedCategories.includes("numbers")) {
+    if (selectedCategories.includes('numbers')) {
       dataToDisplay = dataToDisplay.concat(numbers.map(String));
     }
-    if (selectedCategories.includes("alphabets")) {
+    if (selectedCategories.includes('alphabets')) {
       dataToDisplay = dataToDisplay.concat(alphabets);
     }
-    if (selectedCategories.includes("highest_lowercase_alphabet") && highestLowercaseAlphabet) {
+    if (selectedCategories.includes('highest_lowercase_alphabet') && highestLowercaseAlphabet) {
       dataToDisplay.push(highestLowercaseAlphabet);
     }
     setFilteredData(dataToDisplay);
@@ -111,19 +114,37 @@ export default function Home() {
 
         {responseError && <p className="text-danger">{responseError}</p>}
 
-        {numbers.length > 0 || alphabets.length > 0 || highestLowercaseAlphabet ? (
+        {(numbers.length > 0 || alphabets.length > 0 || highestLowercaseAlphabet) && (
           <div>
-            <label htmlFor="categories">Select Categories:</label>
-            <select
-              id="categories"
-              className="form-control my-2"
-              multiple
-              onChange={handleCategoryChange}
-            >
-              {numbers.length > 0 && <option value="numbers">Numbers</option>}
-              {alphabets.length > 0 && <option value="alphabets">Alphabets</option>}
-              {highestLowercaseAlphabet && <option value="highest_lowercase_alphabet">Highest Lowercase Alphabet</option>}
-            </select>
+            <div className="btn-group" role="group" aria-label="Select Categories">
+              {numbers.length > 0 && (
+                <button
+                  type="button"
+                  className={`btn ${selectedCategories.includes('numbers') ? 'btn-primary' : 'btn-outline-primary'}`}
+                  onClick={() => handleCategoryClick('numbers')}
+                >
+                  Numbers
+                </button>
+              )}
+              {alphabets.length > 0 && (
+                <button
+                  type="button"
+                  className={`btn ${selectedCategories.includes('alphabets') ? 'btn-primary' : 'btn-outline-primary'}`}
+                  onClick={() => handleCategoryClick('alphabets')}
+                >
+                  Alphabets
+                </button>
+              )}
+              {highestLowercaseAlphabet && (
+                <button
+                  type="button"
+                  className={`btn ${selectedCategories.includes('highest_lowercase_alphabet') ? 'btn-primary' : 'btn-outline-primary'}`}
+                  onClick={() => handleCategoryClick('highest_lowercase_alphabet')}
+                >
+                  Highest Lowercase Alphabet
+                </button>
+              )}
+            </div>
 
             <div>
               <h4>Filtered Output:</h4>
@@ -134,7 +155,7 @@ export default function Home() {
               </ul>
             </div>
           </div>
-        ) : null}
+        )}
       </div>
     </div>
   );
